@@ -1,0 +1,6 @@
+provider "storagegrid" {
+  api_url = "https://s3admin.example"
+  account_id = "1234567890"
+  username = "root"
+  password = "password"
+}

@@ -1,0 +1,28 @@
+on:
+  push:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@HEAD
+      - uses: actions/setup-go@HEAD
+      - if: github.ref_type == 'tag'
+        uses: goreleaser/goreleaser-action@HEAD
+        with:
+          args: release
+        env:
+          GITHUB_TOKEN: ${{github.token}}
+      - if: github.ref_type != 'tag'
+        run: |
+          go build
+      - if: github.ref_type != 'tag'
+        run: |
+          gh release create ${prerelase:+--prerelease} -- "$tag" || gh api -X PATCH "/repos/{owner}/{repo}/git/refs/tags/$tag" -F force=true -f "sha=$(git rev-parse @)"
+          gh release upload --clobber -- "$tag" terraform-provider-*
+        env:
+          tag: ${{github.ref_name}}${{ github.ref_type == 'branch' && '-nightly' || '' }}
+          prerelease: ${{ github.ref_type == 'branch' && '+' || '' }}
+          GITHUB_TOKEN: ${{github.token}}
